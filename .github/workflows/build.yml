@@ -1,6 +1,5 @@
 name: Deploy Lambda Function
 
-#test
 on:
   push:
     branches:

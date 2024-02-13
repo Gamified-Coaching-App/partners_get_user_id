@@ -1,0 +1,46 @@
+name: Deploy Partner Microservice
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - lambda-folder: connect_to_partners/garmin_access_token
+            lambda-name: arn:aws:lambda:eu-west-2:590183778243:function:garmin_access_token
+          - lambda-folder: connect_to_partners/garmin_request_token
+            lambda-name: arn:aws:lambda:eu-west-2:590183778243:function:garmin_request_token
+          - lambda-folder: get_user_id
+            lambda-name: arn:aws:lambda:eu-west-2:590183778243:function:partner_get_user_id
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+
+      - name: Package Lambda function
+        run: |
+          cd ${{ matrix.lambda-folder }}
+          zip -r ${{ github.workspace }}/lambda_function.zip .
+          echo "ZIP file created at: ${{ github.workspace }}/lambda_function.zip"
+        working-directory: ${{ github.workspace }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to AWS Lambda
+        run: |
+          aws lambda update-function-code --function-name ${{ matrix.lambda-name }} --zip-file fileb://${{ github.workspace }}/lambda_function.zip
+        working-directory: ${{ github.workspace }}

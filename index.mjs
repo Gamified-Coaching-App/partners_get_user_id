@@ -24,11 +24,8 @@ export const handler = async (event) => {
                         ":partner": partner,
                     },
                 };
-
-                // Execute the query
                 const data = await dynamo_db_client.send(new QueryCommand(params));
 
-                // Cache the user_id if found
                 if (data.Items && data.Items.length > 0) {
                     user_id_cache[partner_user_id] = data.Items[0].user_id;
                 } else {
